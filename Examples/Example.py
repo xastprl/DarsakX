@@ -1,4 +1,4 @@
-from raytrace import rtrace
+from darsakx import rtrace
 import darpanx as drp
 import matplotlib.pyplot as plt
 import numpy as np
