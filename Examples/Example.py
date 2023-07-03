@@ -5,11 +5,7 @@ import numpy as np
 
 # Telescope parameters
 theta=np.linspace(0,0.5,2)
-#theta=np.array([0])
 r=np.arange(150,400,8) # radius of each shell
-#np.random.shuffle(r)
-#r=1000*np.array([0.65,0.87,0.99,1.23])/2
-#r=[300]
 x0=7500*np.ones_like(r) # in mm focal length of each shell
 lp=300*np.ones_like(r) # in mm Length of parabola of each shell
 lh=300*np.ones_like(r) # in mm Length of parabola of each shell
