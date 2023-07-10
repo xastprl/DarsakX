@@ -10,7 +10,8 @@ def psf0(ray_data_alltheta_allr,theta,x0,dl,Theta_0_missing,theta0,pixel_size,th
         theta=theta[0:-1]
     index=np.argmin(np.abs(theta-theta0))
     
-    det_psf(ray_data_alltheta_allr[index],theta[index],x0,pixel_size,theta_rf,rfp,rfh,E)
+    intensity_data=det_psf(ray_data_alltheta_allr[index],theta[index],x0,pixel_size,theta_rf,rfp,rfh,E)
+    return intensity_data
 
 
 def effa0(ray_data_alltheta_allr,theta,x0,dl,Theta_0_missing,theta_rf,rfp,rfh,E): 
@@ -40,6 +41,7 @@ def effa0(ray_data_alltheta_allr,theta,x0,dl,Theta_0_missing,theta_rf,rfp,rfh,E)
     plt.xlabel("$\Theta$ [']")
     plt.legend(loc='upper right')
     plt.show(block=False)
+    return [eff_Area, theta_arcmin]
 
 def vf0(ray_data_alltheta_allr,theta,x0,dl,Theta_0_missing,theta_rf,rfp,rfh,E):
     eff_Area=np.empty_like(theta)
@@ -62,14 +64,18 @@ def vf0(ray_data_alltheta_allr,theta,x0,dl,Theta_0_missing,theta_rf,rfp,rfh,E):
     theta_arcmin=theta*60
     plt.figure(figsize=(10, 6))
     plt.rcParams.update({'font.size':15})
-    if temp==1:  plt.plot(theta_arcmin[0:-1],eff_Area[0:-1]/eff_Area[-1], linewidth=4,label="Energy: "+ f"{E:.2f}"+ "keV")
+    if temp==1:  
+        plt.plot(theta_arcmin[0:-1],eff_Area[0:-1]/eff_Area[-1], linewidth=4,label="Energy: "+ f"{E:.2f}"+ "keV")
+        theta_return=theta_arcmin[0:-1]; vf_return=eff_Area[0:-1]/eff_Area[-1]
     else:  
         index=np.where(theta==0)
         plt.plot(theta_arcmin,eff_Area/eff_Area[index], linewidth=4,label="Energy: "+ f"{E:.2f}"+ "keV")
+        theta_return=theta_arcmin; vf_return=eff_Area/eff_Area[index]
     plt.ylabel('Vignetting Factor')
     plt.xlabel("$\Theta$ [']")
     plt.legend(loc='upper right')
     plt.show(block=False)
+    return[vf_return,theta_return]
 
 def eef0(ray_data_alltheta_allr,theta,x0,dl,Theta_0_missing,pct,theta_rf,rfp,rfh,E):
     if Theta_0_missing=="yes":
@@ -96,6 +102,7 @@ def eef0(ray_data_alltheta_allr,theta,x0,dl,Theta_0_missing,pct,theta_rf,rfp,rfh
     plt.ylabel('EEF_'+str(pct)+'% ["]')
     plt.legend(loc='upper left')
     plt.show(block=False)
+    return [EEF_arcsec, theta_arcmin]
         
 
 def EEF(yd,zd,pct,Reflectivity):
@@ -164,13 +171,17 @@ def det_psf(ray_data_allr,theta,x0,pixel_size,theta_rf,rfp,rfh,E):
     plt.rcParams.update({'font.size':20})
     fig, ax = plt.subplots()
     #ax.set_aspect(1)
-    plt.imshow(intensity, cmap='viridis',norm=colors.LogNorm(), origin='lower', extent=[-pixel_size*(num_pixels_z_1+0.5)*180*3600/np.pi/x0, pixel_size*(num_pixels_z_2+0.5)*180*3600/np.pi/x0, (yd_min-0.5*pixel_size)*180*3600/np.pi/x0, (yd_max+0.5*pixel_size)*180*3600/np.pi/x0])
+    zmin0=-pixel_size*(num_pixels_z_1+0.5)
+    zmax0=pixel_size*(num_pixels_z_2+0.5)
+    ymin0=(yd_min-0.5*pixel_size)
+    ymax0=(yd_max+0.5*pixel_size)
+    plt.imshow(intensity, cmap='viridis',norm=colors.LogNorm(), origin='lower', extent=[zmin0*180*3600/np.pi/x0, zmax0*180*3600/np.pi/x0, ymin0*180*3600/np.pi/x0, ymax0*180*3600/np.pi/x0])
     plt.colorbar()
     plt.title(label="Theta: "+ f"{theta:.2f}"+"\u00b0"+ ", Energy: "+ f"{E:.2f}"+ "keV")
     plt.xlabel('$Z_{d}$ ["]')
     plt.ylabel('$y_{d}$ ["]')
     plt.show(block=False)
-    return intensity
+    return [intensity, {'zmin':zmin0,'zmax':zmax0,'ymin':ymin0,'ymax':ymax0}]
 
 
 
@@ -227,6 +238,5 @@ def gui_cal(ray_data_alltheta_allr,theta,x0,dl,lp,theta0,numrays,E):
 
     plt.show(block=False)
  
-    
     
     
