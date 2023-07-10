@@ -8,5 +8,5 @@ setup(
     author_email='neerajt454@gmail.com',
     url='https://github.com/Neerajti32/darsakx',
     packages=['darsakx'],
-    install_requires=['numpy', 'scipy','multiprocessing','matplotlib',' tabulate'],
+    install_requires=['numpy', 'scipy','matplotlib',' tabulate'],
 )
