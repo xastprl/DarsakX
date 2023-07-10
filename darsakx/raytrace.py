@@ -11,8 +11,16 @@ from tabulate import tabulate
 start_time=time.time()
 
 class rtrace: 
-    def __init__(self,Radius,Focallength,Lengthpar,Lengthhyp,ShellThickness,Theta,Raydensity,Energy,xi=1,Error="no",Approx="no",NumCore=None, SurfaceType='wo'):
-        Radius=np.array(Radius); Focallength=np.array(Focallength); Lengthhyp=np.array(Lengthhyp); Lengthpar=np.array(Lengthpar); ShellThickness=np.array(ShellThickness)
+    def __init__(self,Radius,Focallength,Lengthpar,Lengthhyp,ShellThickness,Theta,Raydensity,Energy,xi=1,DetectorPosition=0,Error="no",Approx="no",Gp=None,Gh=None,dGp=None,dGh=None,NumCore=None, SurfaceType='wo'):
+        if Error=='yes' and (Gp==None or Gh==None or dGp==None or dGh==None):
+           raise Exception("Error='yes', hence define error-functions (Gp,Gh,dGp and dGh)")
+        if Approx!='no' and Error=='no':
+            raise Exception("Approximation method cannot initialize as error='no'")  
+        if Gp==None: Gp=np.empty_like(Radius)
+        if dGp==None: dGp=np.empty_like(Radius)
+        if Gh==None: Gh=np.empty_like(Radius)
+        if dGh==None: dGh=np.empty_like(Radius)
+        Radius=np.array(Radius); Focallength=np.array(Focallength); Lengthhyp=np.array(Lengthhyp); Lengthpar=np.array(Lengthpar); ShellThickness=np.array(ShellThickness); Gp=np.array(Gp); Gh=np.array(Gh); dGp=np.array(dGp); dGh=np.array(dGh)
         Theta.sort()
         if isinstance(Energy,list):
             Energy=Energy[0]
@@ -23,10 +31,10 @@ class rtrace:
             if xi==1:
              xi=np.ones_like(Radius)
         self.arg_Radius=np.argsort(Radius); Radius=Radius[self.arg_Radius]; Focallength=Focallength[self.arg_Radius]; Lengthpar=Lengthpar[self.arg_Radius]
-        Lengthhyp=Lengthhyp[self.arg_Radius] ; xi=xi[self.arg_Radius]
+        Lengthhyp=Lengthhyp[self.arg_Radius] ; xi=xi[self.arg_Radius]; Gp=Gp[self.arg_Radius]; dGp=dGp[self.arg_Radius]; Gh=Gh[self.arg_Radius]; dGh=dGh[self.arg_Radius]
         self.r=Radius; self.x0=Focallength; self.xi=xi; self.lp=Lengthpar; self.lh=Lengthhyp; self.theta=Theta
         self.dl=np.sqrt(1/Raydensity)*10; self.raydensity=Raydensity; self.error=Error; self.approx=Approx;self.E=Energy; self.NumCore=NumCore; self.st=ShellThickness; self.surfacetype=SurfaceType
-
+        self.detectorposition=DetectorPosition; self.Gp=Gp; self.dGp=dGp; self.Gh=Gh; self.dGh=dGh
         if isinstance(NumCore,(int,float)):
             NumCore=int(NumCore)
             if NumCore > 0:
@@ -39,17 +47,17 @@ class rtrace:
         else: self.NumCore=None
         self.table()
         self.raytrace_data=self.rtrace()
+
         
 
       
         
     
     def ray_data(self,i,j):
-        #print('Radius:'+str(r[j])+' mm, Theta:'+str(theta[i])+' degree')
         if self.surfacetype=="wo":
-         ray_data=wo_ray_trace(self.r[j],self.x0[j],self.xi[j],self.theta[i],self.lp[j],self.lh[j],self.approx,self.error,self.dl)### Wolter Optics
+         ray_data=wo_ray_trace(self.r[j],self.x0[j],self.xi[j],self.theta[i],self.lp[j],self.lh[j],self.approx,self.error,self.dl,self.detectorposition,self.Gp[j],self.Gh[j],self.dGp[j],self.dGh[j])### Wolter Optics
         elif self.surfacetype=="co":
-         ray_data=co_ray_trace(self.r[j],self.x0[j],self.xi[j],self.theta[i],self.lp[j],self.lh[j],self.approx,self.error,self.dl)### Conical Optics
+         ray_data=co_ray_trace(self.r[j],self.x0[j],self.xi[j],self.theta[i],self.lp[j],self.lh[j],self.approx,self.error,self.dl,self.detectorposition,self.Gp[j],self.Gh[j],self.dGp[j],self.dGh[j])### Conical Optics
         else: raise Exception("Enter Valid surface type: wo or co")
         if j>0: ray_data = ray_filter(ray_data,self.r,self.x0,self.xi,self.lp,self.lh,self.st,self.theta[i],j)### Rays filter from shadows
         return ray_data
@@ -80,24 +88,32 @@ class rtrace:
     
     def psf(self,Thetaforpsf,Pixel_size,Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon="yes"):
         reflecivity_input=self.reflecivity_input_check(Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon)
-        psf0(*self.raytrace_data,self.Theta_0_missing,Thetaforpsf,Pixel_size,*reflecivity_input,self.E)
+        intensity_data=psf0(*self.raytrace_data,self.Theta_0_missing,Thetaforpsf,Pixel_size,*reflecivity_input,self.E)
+        return intensity_data
     
     def effa(self,Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon="yes"):
         reflecivity_input=self.reflecivity_input_check(Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon)
-        effa0(*self.raytrace_data,self.Theta_0_missing,*reflecivity_input,self.E)
+        data=effa0(*self.raytrace_data,self.Theta_0_missing,*reflecivity_input,self.E)
+        return data
+        
     
     def vf(self,Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon="yes"):
         reflecivity_input=self.reflecivity_input_check(Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon)
-        vf0(*self.raytrace_data,self.Theta_0_missing,*reflecivity_input,self.E)
+        data=vf0(*self.raytrace_data,self.Theta_0_missing,*reflecivity_input,self.E)
+        return data
 
     def eef(self,Percentage,Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon="yes"):
         reflecivity_input=self.reflecivity_input_check(Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon)
-        eef0(*self.raytrace_data,self.Theta_0_missing,Percentage,*reflecivity_input,self.E)
+        data=eef0(*self.raytrace_data,self.Theta_0_missing,Percentage,*reflecivity_input,self.E)
+        return data
+        
         
     def gui(self,Theta0, NumRays):
         gui_cal(*self.raytrace_data,self.lp,Theta0,NumRays,self.E)
         
-       
+    def data(self):
+        ray_data_alltheta_allr,theta,x0,dl=self.raytrace_data
+        return [ray_data_alltheta_allr, theta]
         
         
     
@@ -129,12 +145,18 @@ class rtrace:
         surfacetype=''
         if self.surfacetype=='wo': surfacetype='Wolter-1'
         elif self.surfacetype=='co': surfacetype='Conical-Approximation'
+        theta_temp=self.theta
+        if np.min(self.theta)==0:
+            if self.Theta_0_missing=='yes':
+              theta_temp=self.theta[0:-1]
         table = [
                ["Telescope Parameters",''],
                ["Surface type",surfacetype],
                ["Ray Density[Rays/cm2]", self.raydensity],
                ["Figure-Error",self.error],
-               ["Theta[deg]", str(np.min(self.theta))+'-'+str(np.max(self.theta))]
+               ["Approximation-Method",self.approx],
+               ["Theta[deg]", str(np.min(theta_temp))+'-'+str(np.max(theta_temp))],
+               ['Detector-Position[mm]',self.detectorposition]
          ]
         
         table1 = [
@@ -144,9 +166,3 @@ class rtrace:
         print(tabulate(table, headers='firstrow', tablefmt="fancy_outline"))
         print("Telescope Geometrical Parameters")
         print(tabulate(table1, headers='firstrow', tablefmt="fancy_outline"))
-
-   
-   
-
-
-
