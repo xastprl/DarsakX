@@ -1,9 +1,8 @@
 import numpy as np
 from scipy.optimize import fsolve
-from .ErrorFunctions import*
 import matplotlib.pyplot as plt
 
-def wo_ray_trace(r0,x0,xi,theta,lp,lh,approx,error,dl):
+def wo_ray_trace(r0,x0,xi,theta,lp,lh,approx,error,dl,xd,Gp,Gh,dGp,dGh):
     
     # r0 mirror radius in mm
     # x0 focal lenght in mm
@@ -39,45 +38,75 @@ def wo_ray_trace(r0,x0,xi,theta,lp,lh,approx,error,dl):
     
 
     ##############-Light filter after 1st reflection at parabola 
-    Rix,Riy,Riz=(x0+lp-yyi*np.sin(theta)).ravel(), (yyi*np.cos(theta)).ravel(), zzi.ravel()
-    n_ip=np.array([-np.cos(theta), -np.sin(theta),0])
-    Ai=(n_ip[1]**2)/(n_ip[0]**2)
-    Bi=2*(Riy-Rix*(n_ip[1])/(n_ip[0]))*(n_ip[1])/(n_ip[0])-2*p
-    Ci=Riz**2+(Riy-Rix*(n_ip[1])/(n_ip[0]))**2-p**2-((4*e*e*p*d)/(e*e-1))
-    if theta==0:
-     xp=-Ci/Bi
-    else:
-     xp=np.empty_like(Bi)
-     index_xp=np.where((Bi**2-4*Ai*Ci)>0)
-     xp[index_xp]=(-Bi[index_xp]-np.sqrt(Bi[index_xp]**2-4*Ai*Ci[index_xp]))/2/Ai
-    rp=np.sqrt(p**2+2*p*(xp)+((4*e*e*p*d)/(e*e-1)))
-    sin_phi_p=Riz/rp
-    cos_phi_p=(Riy+(xp-Rix)*(n_ip[1])/(n_ip[0]))/rp
-    phi_p=np.arctan2(sin_phi_p,cos_phi_p)
-    indexi=np.where(((xp>=x0))  & (xp<=x0+lp))
-    rp=rp[indexi]
-    phi_p=phi_p[indexi]
-    xp=xp[indexi]
-    #######
+    if error=='no'or (error=='yes' and approx=='yes'): 
+      Rix,Riy,Riz=(x0+lp-yyi*np.sin(theta)).ravel(), (yyi*np.cos(theta)).ravel(), zzi.ravel()
+      n_ip=np.array([-np.cos(theta), -np.sin(theta),0])
+      Ai=(n_ip[1]**2)/(n_ip[0]**2)
+      Bi=2*(Riy-Rix*(n_ip[1])/(n_ip[0]))*(n_ip[1])/(n_ip[0])-2*p
+      Ci=Riz**2+(Riy-Rix*(n_ip[1])/(n_ip[0]))**2-p**2-((4*e*e*p*d)/(e*e-1))
+      if theta==0:
+       xp=-Ci/Bi
+      else:
+       xp=np.zeros_like(Bi)
+       index_xp=np.where((Bi**2-4*Ai*Ci)>0)
+       xp[index_xp]=(-Bi[index_xp]-np.sqrt(Bi[index_xp]**2-4*Ai*Ci[index_xp]))/2/Ai
+      rp=np.sqrt(p**2+2*p*(xp)+((4*e*e*p*d)/(e*e-1)))
+      sin_phi_p=Riz/rp
+      cos_phi_p=(Riy+(xp-Rix)*(n_ip[1])/(n_ip[0]))/rp
+      phi_p=np.arctan2(sin_phi_p,cos_phi_p)
+      indexi=np.where(((xp>=x0))  & (xp<=x0+lp))
+      rp=rp[indexi]
+      phi_p=phi_p[indexi]
+      xp=xp[indexi]
+      rp=np.sqrt(p**2+2*p*(xp)+((4*e*e*p*d)/(e*e-1)))
+    elif error=='yes' and approx=='no':
+      Rix,Riy,Riz=(x0+lp-yyi*np.sin(theta)).ravel(), (yyi*np.cos(theta)).ravel(), zzi.ravel()
+      n_ip=np.array([-np.cos(theta), -np.sin(theta),0])
+      Ai0=(n_ip[1]**2)/(n_ip[0]**2)
+      Bi0=2*(Riy-Rix*(n_ip[1])/(n_ip[0]))*(n_ip[1])/(n_ip[0])-2*p
+      Ci0=Riz**2+(Riy-Rix*(n_ip[1])/(n_ip[0]))**2-p**2-((4*e*e*p*d)/(e*e-1))
+      if theta==0:
+       xp=-Ci0/Bi0
+      else:
+       xp=np.ones_like(Bi0)*x0
+       index_xp=np.where((Bi0**2-4*Ai0*Ci0)>0)
+       xp[index_xp]=(-Bi0[index_xp]-np.sqrt(Bi0[index_xp]**2-4*Ai0*Ci0[index_xp]))/2/Ai0
+      Ai=(n_ip[1]**2)/(n_ip[0]**2)
+      Bi=2*(Riy-Rix*(n_ip[1])/(n_ip[0]))*(n_ip[1])/(n_ip[0])
+      Ci=Riz**2+(Riy-Rix*(n_ip[1])/(n_ip[0]))**2
+      for i in range(len(xp)):
+        def func_p(xp):
+          fp=np.sqrt(p**2+2*p*(xp)+((4*e*e*p*d)/(e*e-1))) + Gp(xp)-np.sqrt(Ai*xp**2+Bi[i]*xp+Ci[i])
+          return fp
+        xp[i]=fsolve(func_p, xp[i])
+      rp=np.sqrt(p**2+2*p*(xp)+((4*e*e*p*d)/(e*e-1))) + Gp(xp) # parabola section radial positions in mm
+      sin_phi_p=Riz/rp
+      cos_phi_p=(Riy+(xp-Rix)*(n_ip[1])/(n_ip[0]))/rp
+      phi_p=np.arctan2(sin_phi_p,cos_phi_p)
+      indexi=np.where(((xp>=x0))  & (xp<=x0+lp))
+      rp=rp[indexi]
+      phi_p=phi_p[indexi]
+      xp=xp[indexi]
     
-
-    #######- Incidenet Beam on Paraboloid
-    rp=np.sqrt(p**2+2*p*(xp)+((4*e*e*p*d)/(e*e-1))) + Gp(xp,x0,lp,approx,error) # parabola section radial positions in mm
-    #######
 
 
     #######- Incident ray & reflected ray at parabola 
     n_ip=np.array([-np.cos(theta), -np.sin(theta),0])# incident ray direction
-    beta_p=np.arctan((p/(rp-Gp(xp,x0,lp,approx,error)))+d_Gp(xp,x0,lp,approx,error)) # slop angle of parabola 
+    if error=='yes' and approx=='yes':
+      beta_p=np.arctan((p/(rp))+dGp(xp))
+    elif error=='yes' and approx=='no':
+      beta_p=np.arctan((p/(rp-Gp(xp)))+dGp(xp))
+    elif error=='no':
+      beta_p=np.arctan((p/(rp)))
+    # slop angle of parabola 
     #normal direction of parabola
     n_pp=np.array([np.sin(beta_p),-np.cos(phi_p)*np.cos(beta_p),-np.sin(phi_p)*np.cos(beta_p)])
     # Direction of reflected ray from parabola
     n_rp=n_ip[:,np.newaxis]-2*np.dot(np.transpose(n_pp),n_ip)*n_pp
     #######-reflectivity at parabola 
-    reflectivity_ang_p=90-np.rad2deg(np.arccos(np.dot(np.transpose(n_pp),n_ip)))
+    reflectivity_ang_p=np.rad2deg(np.arccos(np.dot(np.transpose(n_pp),n_ip)))-90
     #######
-
-
+  
 
     ########- Incident beam on hyperboloid 
     n_rp_x=n_rp[0,:]
@@ -89,27 +118,31 @@ def wo_ray_trace(r0,x0,xi,theta,lp,lh,approx,error,dl):
     A=A1-e**2+1
     B=B1-2*d*e**2
     C=C1-(e*d)**2
-    xh=np.empty_like(A)
+    xh=np.zeros_like(A)
     index_hx=np.where((B**2-4*A*C)>0)
     xh[index_hx]=(-B[index_hx]-np.sqrt(B[index_hx]**2-4*A[index_hx]*C[index_hx]))/2/A[index_hx]
-    if approx=="yes":
-      def func(x):
-       f=np.sqrt((e*(x+d))**2-x**2) + Gh(x,x0,lp,approx,error) -np.sqrt(A1.ravel()*x**2+B1.ravel()*x+C1.ravel())
-       return f
-      xh=np.reshape(np.array([fsolve(func, xh.ravel())]), A.shape )
-    rh=np.sqrt((e*(xh+d))**2-xh**2) + Gh(xh,x0,lp,approx,error) 
+    rh=np.sqrt((e*(xh+d))**2-xh**2)
+    if error=="yes" and approx=='no':
+      for i in range(len(xh)):
+        def func(xh):
+          f=np.sqrt((e*(xh+d))**2-xh**2) + Gh(xh) -np.sqrt(A1[i]*xh**2+B1[i]*xh+C1[i])
+          return f
+      xh[i]=fsolve(func, xh[i])
+      rh=np.sqrt((e*(xh+d))**2-xh**2) + Gh(xh) 
     sin_phi_h=n_rp_z*(xh-xp)/rh/n_rp_x + rp*np.sin(phi_p)/rh
     cos_phi_h=n_rp_y*(xh-xp)/rh/n_rp_x + rp*np.cos(phi_p)/rh
     phi_h=np.arctan2(sin_phi_h,cos_phi_h)
     ########
     
 
-
-
-
     #######- Incident ray & reflected ray at hyperbola
     n_ih=n_rp
-    beta_h=np.arctan((((xh+d)*e**2-xh)/(rh-Gh(xh,x0,lp,approx,error))+d_Gh(xh,x0,lp,approx,error))) 
+    if error=='yes' and approx=='yes':
+       beta_h=np.arctan((((xh+d)*e**2-xh)/(rh)+dGh(xh)))
+    elif error=='yes' and approx=='no':
+       beta_h=np.arctan((((xh+d)*e**2-xh)/(rh-Gh(xh))+dGh(xh)))
+    elif error=='no':
+       beta_h=np.arctan(((xh+d)*e**2-xh)/rh)
     n_ph=np.array([np.sin(beta_h), -np.cos(beta_h)*cos_phi_h,-np.cos(beta_h)*sin_phi_h])
     n_rh=n_ih-2*n_ph*np.sum(n_ih*n_ph, axis=0)
     n_rh_x=n_rh[0,:]
@@ -118,13 +151,14 @@ def wo_ray_trace(r0,x0,xi,theta,lp,lh,approx,error,dl):
     ########
 
     #######-reflectivity at Hyperbola
-    reflectivity_ang_h=90-np.rad2deg(np.arccos(np.sum(n_ih*n_ph, axis=0)))
+    reflectivity_ang_h=np.rad2deg(np.arccos(np.sum(n_ih*n_ph, axis=0)))-90
     #######
-   
+    
+
     
     #########- Incident Beam on detector
-    yd=rh*cos_phi_h-xh*n_rh_y/n_rh_x
-    zd=rh*sin_phi_h-xh*n_rh_z/n_rh_x
+    yd=rh*cos_phi_h+(xd-xh)*n_rh_y/n_rh_x
+    zd=rh*sin_phi_h+(xd-xh)*n_rh_z/n_rh_x
     #########
 
     # Define the dtype for the structured array
@@ -135,8 +169,6 @@ def wo_ray_trace(r0,x0,xi,theta,lp,lh,approx,error,dl):
 
     ray_data = np.append(ray_data, np.rec.fromarrays([xp,rp,phi_p,xh,rh,phi_h,zd,yd,n_rp_x,n_rp_y,n_rp_z,n_rh_x,n_rh_y,n_rh_z,reflectivity_ang_p,reflectivity_ang_h], dtype=dtype))
     
-
-
     ########- Restrict Hyperbola length 
     restrict_hyperbola_length=1
     if restrict_hyperbola_length==1:
@@ -144,8 +176,5 @@ def wo_ray_trace(r0,x0,xi,theta,lp,lh,approx,error,dl):
      ray_data=ray_data[index]
     ############
     return ray_data
-
-
-
 
 
