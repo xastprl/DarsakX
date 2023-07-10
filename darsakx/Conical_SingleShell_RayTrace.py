@@ -2,7 +2,7 @@ import numpy as np
 from scipy.optimize import fsolve
 import matplotlib.pyplot as plt
 
-def co_ray_trace(r0,x0,xi,theta,lp,lh,approx,error,dl):
+def co_ray_trace(r0,x0,xi,theta,lp,lh,approx,error,dl,xd,Gp,Gh,dGp,dGh):
     
     # r0 mirror radius in mm
     # x0 focal lenght in mm
@@ -115,8 +115,8 @@ def co_ray_trace(r0,x0,xi,theta,lp,lh,approx,error,dl):
     #######
    
     #########- Incident Beam on detector
-    yd=rh*cos_phi_h-xh*n_rh_y/n_rh_x
-    zd=rh*sin_phi_h-xh*n_rh_z/n_rh_x
+    yd=rh*cos_phi_h+(xd-xh)*n_rh_y/n_rh_x
+    zd=rh*sin_phi_h+(xd-xh)*n_rh_z/n_rh_x
     #########
     
 
@@ -135,7 +135,4 @@ def co_ray_trace(r0,x0,xi,theta,lp,lh,approx,error,dl):
      ray_data=ray_data[index]
     ############
     return ray_data
-
-
-
 
