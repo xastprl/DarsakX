@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.optimize import fsolve
-from .ErrorFunctions import*
 import matplotlib.pyplot as plt
 
 def co_ray_trace(r0,x0,xi,theta,lp,lh,approx,error,dl):
