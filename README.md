@@ -1,6 +1,6 @@
 # darsakx
-To install darsakx 
+To install darsakx: 
 python setup.py install
 
-To uninstall darsakx
+To uninstall darsakx: 
 pip uninstall darsakx
