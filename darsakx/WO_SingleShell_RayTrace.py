@@ -71,6 +71,13 @@ def wo_ray_trace(r0,x0,xi,theta,lp,lh,approx,error,dl,xd,Gp,Gh,dGp,dGh):
        xp=np.ones_like(Bi0)*x0
        index_xp=np.where((Bi0**2-4*Ai0*Ci0)>0)
        xp[index_xp]=(-Bi0[index_xp]-np.sqrt(Bi0[index_xp]**2-4*Ai0*Ci0[index_xp]))/2/Ai0
+      
+      index_01=np.where((xp>x0*(1-lp*1e-3))  & (xp<x0+lp+lp*1e-3))
+      Rix=Rix[index_01]
+      Riy=Riy[index_01]
+      Riz=Riz[index_01]
+      xp=xp[index_01]
+
       Ai=(n_ip[1]**2)/(n_ip[0]**2)
       Bi=2*(Riy-Rix*(n_ip[1])/(n_ip[0]))*(n_ip[1])/(n_ip[0])
       Ci=Riz**2+(Riy-Rix*(n_ip[1])/(n_ip[0]))**2
@@ -78,7 +85,9 @@ def wo_ray_trace(r0,x0,xi,theta,lp,lh,approx,error,dl,xd,Gp,Gh,dGp,dGh):
         def func_p(xp):
           fp=np.sqrt(p**2+2*p*(xp)+((4*e*e*p*d)/(e*e-1))) + Gp(xp)-np.sqrt(Ai*xp**2+Bi[i]*xp+Ci[i])
           return fp
-        xp[i]=fsolve(func_p, xp[i])
+        xp[i],_,ier,_=fsolve(func_p, xp[i],full_output=True)
+        if ier!=1:
+          xp[i]=0.1*x0 # To exclude points that did not converge.        
       rp=np.sqrt(p**2+2*p*(xp)+((4*e*e*p*d)/(e*e-1))) + Gp(xp) # parabola section radial positions in mm
       sin_phi_p=Riz/rp
       cos_phi_p=(Riy+(xp-Rix)*(n_ip[1])/(n_ip[0]))/rp
@@ -127,7 +136,7 @@ def wo_ray_trace(r0,x0,xi,theta,lp,lh,approx,error,dl,xd,Gp,Gh,dGp,dGh):
         def func(xh):
           f=np.sqrt((e*(xh+d))**2-xh**2) + Gh(xh) -np.sqrt(A1[i]*xh**2+B1[i]*xh+C1[i])
           return f
-      xh[i]=fsolve(func, xh[i])
+        xh[i]=fsolve(func, xh[i])
       rh=np.sqrt((e*(xh+d))**2-xh**2) + Gh(xh) 
     sin_phi_h=n_rp_z*(xh-xp)/rh/n_rp_x + rp*np.sin(phi_p)/rh
     cos_phi_h=n_rp_y*(xh-xp)/rh/n_rp_x + rp*np.cos(phi_p)/rh
@@ -176,5 +185,8 @@ def wo_ray_trace(r0,x0,xi,theta,lp,lh,approx,error,dl,xd,Gp,Gh,dGp,dGh):
      ray_data=ray_data[index]
     ############
     return ray_data
+
+
+
 
 

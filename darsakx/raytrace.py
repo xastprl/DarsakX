@@ -11,7 +11,7 @@ from tabulate import tabulate
 start_time=time.time()
 
 class rtrace: 
-    def __init__(self,Radius,Focallength,Lengthpar,Lengthhyp,ShellThickness,Theta,Raydensity,Energy,xi=1,DetectorPosition=0,Error="no",Approx="no",Gp=None,Gh=None,dGp=None,dGh=None,NumCore=None, SurfaceType='wo'):
+    def __init__(self,Radius,Focallength,Lengthpar,Lengthhyp,ShellThickness,Theta,Raydensity,xi=1,DetectorPosition=0,Error="no",Approx="no",Gp=None,Gh=None,dGp=None,dGh=None,NumCore=None, SurfaceType='wo'):
         if Error=='yes' and (Gp==None or Gh==None or dGp==None or dGh==None):
            raise Exception("Error='yes', hence define error-functions (Gp,Gh,dGp and dGh)")
         if Approx!='no' and Error=='no':
@@ -22,8 +22,6 @@ class rtrace:
         if dGh==None: dGh=np.empty_like(Radius)
         Radius=np.array(Radius); Focallength=np.array(Focallength); Lengthhyp=np.array(Lengthhyp); Lengthpar=np.array(Lengthpar); ShellThickness=np.array(ShellThickness); Gp=np.array(Gp); Gh=np.array(Gh); dGp=np.array(dGp); dGh=np.array(dGh)
         Theta.sort()
-        if isinstance(Energy,list):
-            Energy=Energy[0]
         if np.min(np.abs(Theta)!=0):
             Theta=np.array(Theta); Theta=np.append(Theta,0); self.Theta_0_missing='yes'        
         else: self.Theta_0_missing='no'
@@ -33,7 +31,7 @@ class rtrace:
         self.arg_Radius=np.argsort(Radius); Radius=Radius[self.arg_Radius]; Focallength=Focallength[self.arg_Radius]; Lengthpar=Lengthpar[self.arg_Radius]
         Lengthhyp=Lengthhyp[self.arg_Radius] ; xi=xi[self.arg_Radius]; Gp=Gp[self.arg_Radius]; dGp=dGp[self.arg_Radius]; Gh=Gh[self.arg_Radius]; dGh=dGh[self.arg_Radius]
         self.r=Radius; self.x0=Focallength; self.xi=xi; self.lp=Lengthpar; self.lh=Lengthhyp; self.theta=Theta
-        self.dl=np.sqrt(1/Raydensity)*10; self.raydensity=Raydensity; self.error=Error; self.approx=Approx;self.E=Energy; self.NumCore=NumCore; self.st=ShellThickness; self.surfacetype=SurfaceType
+        self.dl=np.sqrt(1/Raydensity)*10; self.raydensity=Raydensity; self.error=Error; self.approx=Approx; self.NumCore=NumCore; self.st=ShellThickness; self.surfacetype=SurfaceType
         self.detectorposition=DetectorPosition; self.Gp=Gp; self.dGp=dGp; self.Gh=Gh; self.dGh=dGh
         if isinstance(NumCore,(int,float)):
             NumCore=int(NumCore)
@@ -88,28 +86,34 @@ class rtrace:
     
     def psf(self,Thetaforpsf,Pixel_size,Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon="yes"):
         reflecivity_input=self.reflecivity_input_check(Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon)
-        intensity_data=psf0(*self.raytrace_data,self.Theta_0_missing,Thetaforpsf,Pixel_size,*reflecivity_input,self.E)
+        intensity_data=psf0(*self.raytrace_data,self.Theta_0_missing,Thetaforpsf,Pixel_size,*reflecivity_input)
         return intensity_data
     
     def effa(self,Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon="yes"):
         reflecivity_input=self.reflecivity_input_check(Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon)
-        data=effa0(*self.raytrace_data,self.Theta_0_missing,*reflecivity_input,self.E)
+        data=effa0(*self.raytrace_data,self.Theta_0_missing,*reflecivity_input)
+        return data
+        
+        
+    def eef(self,Percentage,Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon="yes"):
+        reflecivity_input=self.reflecivity_input_check(Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon)
+        data=eef0(*self.raytrace_data,self.Theta_0_missing,Percentage,*reflecivity_input)
         return data
         
     
     def vf(self,Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon="yes"):
         reflecivity_input=self.reflecivity_input_check(Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon)
-        data=vf0(*self.raytrace_data,self.Theta_0_missing,*reflecivity_input,self.E)
+        data=vf0(*self.raytrace_data,self.Theta_0_missing,*reflecivity_input)
         return data
-
-    def eef(self,Percentage,Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon="yes"):
+    
+    def det_shape(self,Percentage,Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon="yes"):
         reflecivity_input=self.reflecivity_input_check(Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon)
-        data=eef0(*self.raytrace_data,self.Theta_0_missing,Percentage,*reflecivity_input,self.E)
+        data=det_shape0(*self.raytrace_data,self.Theta_0_missing,Percentage,*reflecivity_input,self.detectorposition)
         return data
-        
+   
         
     def gui(self,Theta0, NumRays):
-        gui_cal(*self.raytrace_data,self.lp,Theta0,NumRays,self.E)
+        gui_cal(*self.raytrace_data,self.r,self.x0, self.lp,Theta0,NumRays)
         
     def data(self):
         ray_data_alltheta_allr,theta,x0,dl=self.raytrace_data
@@ -130,7 +134,7 @@ class rtrace:
                          Theta_Reflectivity=Theta_Reflectivity_temp; Reflectivity_p=Reflectivity_p_temp; Reflectivity_h=Reflectivity_h_temp
                     else: 
                        raise Exception("sublist in Theta_Reflectivity, Reflectivity_p and Reflectivity_h are not list or numpy.ndarray")
-                else: raise Exception("Theta_Reflectivity, Reflectivity_p and Reflectivity_h must be of same length as Radius")
+                else: raise Exception("Theta_Reflectivity, Reflectivity_p and Reflectivity_h must be of same length as number of shell")
             else: raise TypeError("Theta_Reflectivity, Reflectivity_p and Reflectivity_h must be a list when IsReflectivityCon='no'")
         elif len(Theta_Reflectivity)==len(Reflectivity_p)==len(Reflectivity_h):
             if all(isinstance(sublist, (int,float))  for sublist in (Theta_Reflectivity+Reflectivity_p+Reflectivity_h)):
@@ -166,3 +170,9 @@ class rtrace:
         print(tabulate(table, headers='firstrow', tablefmt="fancy_outline"))
         print("Telescope Geometrical Parameters")
         print(tabulate(table1, headers='firstrow', tablefmt="fancy_outline"))
+
+   
+   
+
+
+
