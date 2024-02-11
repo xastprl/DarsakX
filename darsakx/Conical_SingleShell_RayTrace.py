@@ -72,7 +72,7 @@ def co_ray_trace(r0,x0,xi,theta,lp,lh,approx,error,dl,xd,Gp,Gh,dGp,dGh):
         index_xp=np.where((Bi0**2-4*Ai0*Ci0)>0)
         xp[index_xp]=(-Bi0[index_xp]+np.sqrt(Bi0[index_xp]**2-4*Ai0*Ci0[index_xp]))/2/Ai0
         
-        index_01=np.where((xp>x0*(1-lp*1e-3))  & (xp<x0+lp+lp*1e-3))
+        index_01=np.where((xp>x0-lp*1e-3)   & (xp<x0+lp+lp*1e-3))
         Rix=Rix[index_01]
         Riy=Riy[index_01]
         Riz=Riz[index_01]
