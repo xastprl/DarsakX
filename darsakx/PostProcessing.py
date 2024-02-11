@@ -6,16 +6,16 @@ from scipy.optimize import minimize, minimize_scalar
 from mpl_toolkits.mplot3d import Axes3D
 import ctypes
 
-def psf0(ray_data_alltheta_allr,theta,x0,dl,Theta_0_missing,theta0,pixel_size,theta_rf,rfp,rfh):
+def psf0(ray_data_alltheta_allr,theta,x0,dl,Theta_0_missing,theta0,pixel_size,theta_rf,rfp,rfh,plot):
     if Theta_0_missing=="yes":
         theta=theta[0:-1]
     index=np.argmin(np.abs(theta-theta0))
     
-    intensity_data=det_psf(ray_data_alltheta_allr[index],theta[index],x0,pixel_size,theta_rf,rfp,rfh)
+    intensity_data=det_psf(ray_data_alltheta_allr[index],theta[index],x0,pixel_size,theta_rf,rfp,rfh,plot)
     return intensity_data
 
 
-def effa0(ray_data_alltheta_allr,theta,x0,dl,Theta_0_missing,theta_rf,rfp,rfh): 
+def effa0(ray_data_alltheta_allr,theta,x0,dl,Theta_0_missing,theta_rf,rfp,rfh,plot): 
     
     if Theta_0_missing=="yes":
         theta=theta[0:-1]
@@ -35,16 +35,17 @@ def effa0(ray_data_alltheta_allr,theta,x0,dl,Theta_0_missing,theta_rf,rfp,rfh):
         eff_Area[i]=Eff_Area(yd,zd,R)     
     eff_Area=eff_Area*dl**2/100
     theta_arcmin=theta*60
-    plt.figure(figsize=(10, 6))
-    plt.rcParams.update({'font.size':15})
-    plt.plot(theta_arcmin,eff_Area, linewidth=4)
-    plt.ylabel('Effective-Area [cm$^2$]')
-    plt.xlabel("$\Theta$ [']")
-    #plt.legend(loc='upper right')
-    plt.show(block=False)
+    if plot=='yes':
+        plt.figure(figsize=(10, 6))
+        plt.rcParams.update({'font.size':15})
+        plt.plot(theta_arcmin,eff_Area, linewidth=4)
+        plt.ylabel('Effective-Area [cm$^2$]')
+        plt.xlabel("$\Theta$ [']")
+        plt.grid(True)
+        plt.show(block=False)
     return [eff_Area, theta_arcmin]
 
-def vf0(ray_data_alltheta_allr,theta,x0,dl,Theta_0_missing,theta_rf,rfp,rfh):
+def vf0(ray_data_alltheta_allr,theta,x0,dl,Theta_0_missing,theta_rf,rfp,rfh,plot):
     eff_Area=np.empty_like(theta)
     temp=0
     if Theta_0_missing=="yes":
@@ -63,22 +64,29 @@ def vf0(ray_data_alltheta_allr,theta,x0,dl,Theta_0_missing,theta_rf,rfp,rfh):
         eff_Area[i]=Eff_Area(yd,zd,R)    
     eff_Area=eff_Area*dl**2/100
     theta_arcmin=theta*60
-    plt.figure(figsize=(10, 6))
-    plt.rcParams.update({'font.size':15})
-    if temp==1:  
-        plt.plot(theta_arcmin[0:-1],eff_Area[0:-1]/eff_Area[-1], linewidth=4)
-        theta_return=theta_arcmin[0:-1]; vf_return=eff_Area[0:-1]/eff_Area[-1]
-    else:  
-        index=np.where(theta==0)
-        plt.plot(theta_arcmin,eff_Area/eff_Area[index], linewidth=4)
-        theta_return=theta_arcmin; vf_return=eff_Area/eff_Area[index]
-    plt.ylabel('Vignetting Factor')
-    plt.xlabel("$\Theta$ [']")
-    #plt.legend(loc='upper right')
-    plt.show(block=False)
+    if plot=='yes':
+        plt.figure(figsize=(10, 6))
+        plt.rcParams.update({'font.size':15})
+        if temp==1:  
+            plt.plot(theta_arcmin[0:-1],eff_Area[0:-1]/eff_Area[-1], linewidth=4)
+            theta_return=theta_arcmin[0:-1]; vf_return=eff_Area[0:-1]/eff_Area[-1]
+        else:  
+            index=np.where(theta==0)
+            plt.plot(theta_arcmin,eff_Area/eff_Area[index], linewidth=4)
+            theta_return=theta_arcmin; vf_return=eff_Area/eff_Area[index]
+        plt.ylabel('Vignetting Factor')
+        plt.xlabel("$\Theta$ [']")
+        plt.grid(True)
+        plt.show(block=False)
+    else:
+        if temp==1:  
+            theta_return=theta_arcmin[0:-1]; vf_return=eff_Area[0:-1]/eff_Area[-1]
+        else:  
+            index=np.where(theta==0)
+            theta_return=theta_arcmin; vf_return=eff_Area/eff_Area[index]
     return[vf_return,theta_return]
 
-def eef0(ray_data_alltheta_allr,theta,x0,dl,Theta_0_missing,pct,theta_rf,rfp,rfh):
+def eef0(ray_data_alltheta_allr,theta,x0,dl,Theta_0_missing,pct,theta_rf,rfp,rfh,plot):
     if Theta_0_missing=="yes":
         theta=theta[0:-1]
     eef=np.empty_like(theta) 
@@ -96,17 +104,18 @@ def eef0(ray_data_alltheta_allr,theta,x0,dl,Theta_0_missing,pct,theta_rf,rfp,rfh
         eef[i]=EEF(yd,zd,pct,R)
     EEF_arcsec=3600*180*eef/x0/np.pi
     theta_arcmin=theta*60
-    plt.figure(figsize=(10, 6))
-    plt.rcParams.update({'font.size':15})
-    plt.plot(theta_arcmin,EEF_arcsec, linewidth=4)
-    plt.xlabel("$\Theta$ [']")
-    plt.ylabel('EEF_'+str(pct)+'% ["]')
-    #plt.legend(loc='upper left')
-    plt.show(block=False)
+    if plot=='yes':
+        plt.figure(figsize=(10, 6))
+        plt.rcParams.update({'font.size':15})
+        plt.plot(theta_arcmin,EEF_arcsec, linewidth=4)
+        plt.xlabel("$\Theta$ [']")
+        plt.ylabel('EEF_'+str(pct)+'% ["]')
+        plt.grid(True)
+        plt.show(block=False)
     return [EEF_arcsec, theta_arcmin]
         
         
-def det_shape0(ray_data_alltheta_allr,theta,x0,dl,Theta_0_missing,pct,theta_rf,rfp,rfh,detectorposition):
+def det_shape0(ray_data_alltheta_allr,theta,x0,dl,Theta_0_missing,pct,theta_rf,rfp,rfh,detectorposition,plot):
     if Theta_0_missing=="yes":
         theta=theta[0:-1] 
     new_detectorposition=np.zeros_like(theta)
@@ -146,18 +155,21 @@ def det_shape0(ray_data_alltheta_allr,theta,x0,dl,Theta_0_missing,pct,theta_rf,r
     yd_mean=yd_mean[arg]
     new_detectorposition=new_detectorposition[arg]
     theta_arcmin=theta*60
-    fig, (ax1, ax2) = plt.subplots(1, 2,figsize=(10, 6))
-    plt.rcParams.update({'font.size':15})
-    ax1.plot(yd_mean,new_detectorposition, linewidth=4, label="Optimum focal surface")
-    ax1.set_xlabel("$y_{d}$ [mm]")
-    ax1.set_ylabel("$x_{d}$ [mm]")
-    ax1.legend(loc='best')
-    ax2.plot(theta_arcmin, EEF_arcsec, linewidth=4, label="flat detector")
-    ax2.plot(theta_arcmin, updated_EEF_arcsec, linewidth=4, label="curve detector")
-    ax2.set_xlabel("$\Theta$ [']")
-    ax2.set_ylabel('EEF_'+str(pct)+'% ["]')
-    ax2.legend(loc='best')
-    plt.show(block=False)
+    if plot=='yes':
+        fig, (ax1, ax2) = plt.subplots(1, 2,figsize=(10, 6))
+        plt.rcParams.update({'font.size':15})
+        ax1.plot(yd_mean,new_detectorposition, linewidth=4, label="Optimum focal surface")
+        ax1.set_xlabel("$y_{d}$ [mm]")
+        ax1.set_ylabel("$x_{d}$ [mm]")
+        ax1.legend(loc='best')
+        ax2.plot(theta_arcmin, EEF_arcsec, linewidth=4, label="flat detector")
+        ax2.plot(theta_arcmin, updated_EEF_arcsec, linewidth=4, label="curve detector")
+        ax2.set_xlabel("$\Theta$ [']")
+        ax2.set_ylabel('EEF_'+str(pct)+'% ["]')
+        ax2.legend(loc='best')
+        ax1.grid(True)
+        ax2.grid(True)
+        plt.show(block=False)
     return [[new_detectorposition, yd_mean],[theta_arcmin,updated_EEF_arcsec]]
 
 
@@ -191,7 +203,7 @@ def Eff_Area(yd,zd,Reflectivity):
 
 
 
-def det_psf(ray_data_allr,theta,x0,pixel_size,theta_rf,rfp,rfh):
+def det_psf(ray_data_allr,theta,x0,pixel_size,theta_rf,rfp,rfh,plot):
     zd=np.empty(0); yd=np.empty(0); R=np.empty(0); 
     for i in range(len(ray_data_allr)):
         yd_temp=ray_data_allr[i]['yd']
@@ -223,29 +235,32 @@ def det_psf(ray_data_allr,theta,x0,pixel_size,theta_rf,rfp,rfh):
         pixel_z = int(np.floor(zd[i] / pixel_size))
         intensity[pixel_y, pixel_z] += R[i]
 
-    # Create a color plot of the intensity values
-    plt.rcParams.update({'font.size':20})
-    fig, ax = plt.subplots(figsize=(10, 6))
-    #ax.set_aspect(1)
+    
+
     zmin0=-pixel_size*(num_pixels_z_1+0.5)
     zmax0=pixel_size*(num_pixels_z_2+0.5)
     ymin0=(yd_min-0.5*pixel_size)
     ymax0=(yd_max+0.5*pixel_size)
-    plt.imshow(intensity, cmap='viridis',norm=colors.LogNorm(), origin='lower', extent=[zmin0*180*3600/np.pi/x0, zmax0*180*3600/np.pi/x0, ymin0*180*3600/np.pi/x0, ymax0*180*3600/np.pi/x0])
-    plt.colorbar()
-    plt.title(label="Theta: "+ f"{theta:.2f}")
-    plt.xlabel('$Z_{d}$ ["]')
-    plt.ylabel('$y_{d}$ ["]')
-    plt.show(block=False)
+    if plot=='yes':
+        plt.rcParams.update({'font.size':20})
+        fig, ax = plt.subplots(figsize=(10, 6))
+        #ax.set_aspect(1)
+        #plt.imshow(intensity, cmap='viridis',norm=colors.LogNorm(), origin='lower', extent=[zmin0*180*3600/np.pi/x0, zmax0*180*3600/np.pi/x0, ymin0*180*3600/np.pi/x0, ymax0*180*3600/np.pi/x0])
+        plt.imshow(intensity, cmap='viridis',norm=colors.LogNorm(), origin='lower', extent=[zmin0, zmax0, ymin0, ymax0])
+        plt.colorbar()
+        plt.title(label="Theta: "+ f"{theta:.2f}"+"$^\circ$")
+        plt.xlabel('$Z_{d}$ [mm]')
+        plt.ylabel('$y_{d}$ [mm]')
+        plt.show(block=False)
     return [intensity, {'zmin':zmin0,'zmax':zmax0,'ymin':ymin0,'ymax':ymax0}]
 
 
 
     
-    
 
 
-def gui_cal(ray_data_alltheta_allr,theta,x0,dl,radius,x0_all,lp,theta0,numrays):
+
+def gui_cal(ray_data_alltheta_allr,theta,x0,dl,radius,x0_all,lp,lh,xi,xd,theta0,numrays):
     fig = plt.figure(figsize=(10, 6))
     ax = plt.axes(projection='3d')
     fig.tight_layout(pad=0)
@@ -266,42 +281,49 @@ def gui_cal(ray_data_alltheta_allr,theta,x0,dl,radius,x0_all,lp,theta0,numrays):
             numrays=len(rp)
         rp_subset = np.random.random_integers(low=0,high=len(rp),size=numrays)
         for k in rp_subset:
-            xint=np.max(x0+3*lp/2)
-            ax.plot([xint,xp[k], xh[k],0], [rp[k]*np.cos(phi_p[k])+(xint-xp[k])*np.sin(theta[i]), rp[k]*np.cos(phi_p[k]), rh[k]*np.cos(phi_h[k]),yd[k]], [rp[k]*np.sin(phi_p[k]),rp[k]*np.sin(phi_p[k]), rh[k]*np.sin(phi_h[k]),zd[k]],color=color)
+            xint=np.max(x0+2*lp)
+            ax.plot([xint,xp[k], xh[k],xd], [rp[k]*np.cos(phi_p[k])+(xint-xp[k])*np.sin(theta[i]), rp[k]*np.cos(phi_p[k]), rh[k]*np.cos(phi_h[k]),yd[k]], [rp[k]*np.sin(phi_p[k]),rp[k]*np.sin(phi_p[k]), rh[k]*np.sin(phi_h[k]),zd[k]],color=color)
         angle=np.linspace(0,2*np.pi,100)
         y2=radius[j]*np.cos(angle)
         z2=radius[j]*np.sin(angle)
         x2=np.ones_like(y2)*x0_all[j]
-        ax.plot(x2,y2,z2)
-        
+        ax.plot(x2,y2,z2, color='gray')
+        ### 
+        alpha=np.arctan(radius[j]/x0_all[j])/4
+        theta_p=2*xi[j]*alpha/(1+xi[j])
+        theta_h=2*(1+2*xi[j])*alpha/(1+xi[j])
+        y1=(radius[j]+lp[j]*np.tan(theta_p))*np.cos(angle)
+        z1=(radius[j]+lp[j]*np.tan(theta_p))*np.sin(angle)
+        x1=np.ones_like(y2)*(x0_all[j]+lp[j])
+        ax.plot(x1,y1,z1, color='gray')
+        ###
+        y20=(radius[j]-lh[j]*np.tan(theta_h))*np.cos(angle)
+        z20=(radius[j]-lh[j]*np.tan(theta_h))*np.sin(angle)
+        x20=np.ones_like(y2)*(x0_all[j]-lh[j])
+        ax.plot(x20,y20,z20, color='gray')
     
+    def add_coordinate_system(ax):
+        ax.text(1.2*radius[-1], 0, 0, '$X$', color='b', fontsize=18, ha='center', fontweight='bold')
+        ax.text(0, 1.2*radius[-1], 0, '$Y$', color='g', fontsize=18, ha='center', fontweight='bold')
+        ax.text(0, 0, 1.2*radius[-1], '$Z$', color='r', fontsize=18, ha='center', fontweight='bold')
+
+        ax.plot([0, radius[-1]], [0, 0], [0, 0], color='b', lw=2, alpha=0.6)
+        ax.plot([0, 0], [0, radius[-1]], [0, 0], color='g', lw=2, alpha=0.6)
+        ax.plot([0, 0], [0, 0], [0, radius[-1]], color='r', lw=2, alpha=0.6)
     
-    ax.set_box_aspect([10, 1, 1]) 
+    add_coordinate_system(ax)
+    ax.set_box_aspect([x0/radius[-1], 1, 1]) 
     ax.set_axis_off()
-    # Function to handle keyboard events
     def on_key(event):
-        # Get the current view limits
-        xlim = ax.get_xlim()
-        ylim = ax.get_ylim()
-        zlim = ax.get_zlim()
-
-        # Adjust the view based on the pressed key
         if event.key == 'x':
-            ax.view_init(elev=0, azim=0)  # XY plane
-            ax.set_zlim(zlim)  # Restore the original z-axis limits
+            ax.view_init(elev=0, azim=0)
         elif event.key == 'y':
-            ax.view_init(elev=0, azim=90)  # YZ plane
-            ax.set_xlim(xlim)  # Restore the original x-axis limits
+            ax.view_init(elev=0, azim=-90)
         elif event.key == 'z':
-            ax.view_init(elev=90, azim=-90)  # ZX plane
-            ax.set_ylim(ylim)  # Restore the original y-axis limits
-
-        # Redraw the plot
+            ax.view_init(elev=90, azim=0)
         fig.canvas.draw()
-
-    # Connect the keyboard event to the function
+    ax.set_proj_type('ortho')
     fig.canvas.mpl_connect('key_press_event', on_key)
-
     plt.show(block=False)
  
     
