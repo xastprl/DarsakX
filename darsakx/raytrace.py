@@ -84,31 +84,31 @@ class rtrace:
         print("Ray Trace Completed!")  
         return ray_data_alltheta_allr,self.theta,np.mean(self.x0),self.dl
     
-    def psf(self,Thetaforpsf,Pixel_size,Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon="yes", plot="yes"):
+    def psf(self,Thetaforpsf,Pixel_size,Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon="yes", Plot="yes"):
         reflecivity_input=self.reflecivity_input_check(Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon)
-        intensity_data=psf0(*self.raytrace_data,self.Theta_0_missing,Thetaforpsf,Pixel_size,*reflecivity_input,plot)
+        intensity_data=psf0(*self.raytrace_data,self.Theta_0_missing,Thetaforpsf,Pixel_size,*reflecivity_input,Plot)
         return intensity_data
     
-    def effa(self,Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon="yes", plot="yes"):
+    def effa(self,Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon="yes", Plot="yes"):
         reflecivity_input=self.reflecivity_input_check(Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon)
-        data=effa0(*self.raytrace_data,self.Theta_0_missing,*reflecivity_input,plot)
+        data=effa0(*self.raytrace_data,self.Theta_0_missing,*reflecivity_input,Plot)
         return data
         
         
-    def eef(self,Percentage,Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon="yes", plot="yes"):
+    def eef(self,Percentage,Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon="yes", Plot="yes"):
         reflecivity_input=self.reflecivity_input_check(Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon)
-        data=eef0(*self.raytrace_data,self.Theta_0_missing,Percentage,*reflecivity_input,plot)
+        data=eef0(*self.raytrace_data,self.Theta_0_missing,Percentage,*reflecivity_input,Plot)
         return data
         
     
-    def vf(self,Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon="yes", plot="yes"):
+    def vf(self,Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon="yes", Plot="yes"):
         reflecivity_input=self.reflecivity_input_check(Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon)
-        data=vf0(*self.raytrace_data,self.Theta_0_missing,*reflecivity_input,plot)
+        data=vf0(*self.raytrace_data,self.Theta_0_missing,*reflecivity_input,Plot)
         return data
     
-    def det_shape(self,Percentage,Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon="yes", plot="yes"):
+    def det_shape(self,Percentage,Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon="yes", Plot="yes"):
         reflecivity_input=self.reflecivity_input_check(Theta_Reflectivity,Reflectivity_p,Reflectivity_h,IsReflectivityCon)
-        data=det_shape0(*self.raytrace_data,self.Theta_0_missing,Percentage,*reflecivity_input,self.detectorposition,plot)
+        data=det_shape0(*self.raytrace_data,self.Theta_0_missing,Percentage,*reflecivity_input,self.detectorposition,Plot)
         return data
    
         

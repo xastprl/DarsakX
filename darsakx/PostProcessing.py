@@ -235,7 +235,7 @@ def det_psf(ray_data_allr,theta,x0,pixel_size,theta_rf,rfp,rfh,plot):
         pixel_z = int(np.floor(zd[i] / pixel_size))
         intensity[pixel_y, pixel_z] += R[i]
 
-    
+    intensity=intensity/np.max(intensity)
 
     zmin0=-pixel_size*(num_pixels_z_1+0.5)
     zmax0=pixel_size*(num_pixels_z_2+0.5)
