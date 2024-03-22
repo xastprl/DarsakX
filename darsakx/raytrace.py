@@ -8,10 +8,10 @@ import multiprocessing as mp
 import time
 import sys
 from tabulate import tabulate
-start_time=time.time()
 
 class rtrace: 
     def __init__(self,Radius,Focallength,Lengthpar,Lengthhyp,ShellThickness,Theta,Raydensity,xi=1,DetectorPosition=0,Error="no",Approx="no",Gp=None,Gh=None,dGp=None,dGh=None,NumCore=None, SurfaceType='wo'):
+        self.start_time=time.time()
         if Error=='yes' and (Gp==None or Gh==None or dGp==None or dGh==None):
            raise Exception("Error='yes', hence define error-functions (Gp,Gh,dGp and dGh)")
         if Approx!='no' and Error=='no':
@@ -80,7 +80,7 @@ class rtrace:
                 ray_data_alltheta_allr.append(ray_data_onetheta)
             pool.close()
             pool.join()
-        print("Run Time[s] = ","{0:.3f}".format((time.time()-start_time)))
+        print("Run Time[s] = ","{0:.3f}".format((time.time()-self.start_time)))
         print("Ray Trace Completed!")  
         return ray_data_alltheta_allr,self.theta,np.mean(self.x0),self.dl
     
