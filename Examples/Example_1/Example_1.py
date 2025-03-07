@@ -22,7 +22,7 @@ if __name__ == '__main__':
    rf = [rf0] * len(r0); theta_rf = [theta_rf0] * len(r0)
    gp = [Gp] * len(r0); dgp = [d_Gp] * len(r0)
    gh = [Gh] * len(r0); dgh = [d_Gh] * len(r0)
-   raytrace_data=rtrace(Radius=r0,Focallength=x0,Lengthpar=lp,Lengthhyp=lh,ShellThickness=st,Theta=theta,DetectorPosition=0,Raydensity=500,SurfaceType="wo", Error='yes',Approx='yes',Gp=gp,dGp=dgp,Gh=gh,dGh=dgh)
+   raytrace_data=rtrace(Radius=r0,Focallength=x0,Lengthpar=lp,Lengthhyp=lh,ShellThickness=st,Theta=theta,DetectorPosition=0,Raydensity=500,ParallelProcessingFor='shell', NumCore=12,SurfaceType="wo", Error='yes',Approx='yes',Gp=gp,dGp=dgp,Gh=gh,dGh=dgh)
    raytrace_data.psf(Thetaforpsf= 0.2,Pixel_size=20,Theta_Reflectivity=theta_rf,Reflectivity_p=rf,Reflectivity_h=rf,IsReflectivityCon='no')
    raytrace_data.effa(Theta_Reflectivity=theta_rf,Reflectivity_p=rf,Reflectivity_h=rf,IsReflectivityCon='no')
    raytrace_data.det_shape(Percentage=50,Theta_Reflectivity=theta_rf,Reflectivity_p=rf,Reflectivity_h=rf)
